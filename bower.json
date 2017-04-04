@@ -1,0 +1,12 @@
+{
+    "name": "avalon-data-framework",
+    "description": "This is a MVC framework for internal use only. It provides a highly compact sync framework for CRUD actions between browser and server.",
+    "keywords": ["MVC", "framework", "data sync", "web-components"],
+    "authors": ["JingAn Chen"],
+    "license": "MIT",
+    "homepage": "https://github.com/lzsoft/avalon-data-framework",
+    "ignore": ["**/.*", "node_modules", "bower_components", "test", "tests", "readme.md"],
+    "dependencies": {
+        "front-end-infrastructure": "lzsoft/front-end-infrastructure"
+    }
+}
