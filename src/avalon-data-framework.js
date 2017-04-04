@@ -3,11 +3,9 @@
     //
     // ATTR is the attribute on <element> as html attribute, thus they all start with "data-".
     //
-    const ATTR_GET_URL = "data-get-url";
-    const ATTR_GET_JSON = "data-get-json";
-    const ATTR_GET_AUTO = "data-get-auto";
-    const ATTR_PUT_URL = "data-put-url";
-    const ATTR_PUT_JSON = "data-put-json";
+    const ATTR_URL = "data-url";
+    const ATTR_JSON = "data-json";
+    const ATTR_AUTO_GET = "data-auto-get";
     const ATTR_LOOP = "data-loop";
     const ATTR_LOOP_DELETE = "data-loop-delete";
     const ATTR_PENETRATE = "data-penetrate";
@@ -232,15 +230,13 @@
         }
         eventize() {
             let self = this;
-            self.addEventListener(EVENT_GET, function(e) {
+            self.addEventListener(EVENT_GET, async function(e) {
                 e.stopPropagation();
                 let query = self.gather(self, true);
-                if (self.hasAttribute(ATTR_GET_URL)) {
-                    window.Lzsoft.Api.CoreClassic(self.getAttribute(ATTR_GET_URL), { requestData: JSON.stringify(query), requestContentType: "application/json", responseContentType: 'json' }, function(result) {
-                        done(result);
-                    });
-                } else if (self.hasAttribute(ATTR_GET_JSON)) {
-                    done(JSON.parse(self.getAttribute(ATTR_GET_JSON)));
+                if (self.hasAttribute(ATTR_URL)) {
+                    done(await window.Lzsoft.Api.Get(self.getAttribute(ATTR_URL), query));
+                } else if (self.hasAttribute(ATTR_JSON)) {
+                    done(JSON.parse(self.getAttribute(ATTR_JSON)));
                 } else {
                     done(null);
                 }
@@ -250,15 +246,13 @@
                     self.dispatchEvent(new Event(EVENT_GET_DONE));
                 }
             });
-            self.addEventListener(EVENT_PUT, function(e) {
+            self.addEventListener(EVENT_PUT, async function(e) {
                 e.stopPropagation();
                 let query = self.gather(self, false);
-                if (self.hasAttribute(ATTR_PUT_URL)) {
-                    window.Lzsoft.Api.CoreClassic(self.getAttribute(ATTR_PUT_URL), { requestData: JSON.stringify(query), requestContentType: "application/json", responseContentType: 'json' }, function(result) {
-                        done(result);
-                    });
-                } else if (self.hasAttribute(ATTR_PUT_JSON)) {
-                    self.setAttribute(ATTR_PUT_JSON, JSON.stringify(query));
+                if (self.hasAttribute(ATTR_URL)) {
+                    done(await window.Lzsoft.Api.Put(self.getAttribute(ATTR_URL), query));
+                } else if (self.hasAttribute(ATTR_JSON)) {
+                    self.setAttribute(ATTR_JSON, JSON.stringify(query));
                     done(query);
                 } else {
                     done(query);
@@ -271,7 +265,7 @@
                     self.dispatchEvent(new Event(EVENT_PUT_DONE));
                 }
             });
-            if (self.hasAttribute(ATTR_GET_AUTO)) {
+            if (self.hasAttribute(ATTR_AUTO_GET)) {
                 self.dispatchEvent(new Event(EVENT_GET));
             }
         }
