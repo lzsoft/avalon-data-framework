@@ -255,7 +255,7 @@
                     self.setAttribute(ATTR_JSON, JSON.stringify(query));
                     done(query);
                 } else {
-                    done(query);
+                    done(null);
                 }
 
                 function done(json) {
