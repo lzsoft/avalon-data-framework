@@ -7,6 +7,6 @@
     "homepage": "https://github.com/lzsoft/avalon-data-framework",
     "ignore": ["**/.*", "node_modules", "bower_components", "test", "tests", "readme.md"],
     "dependencies": {
-        "front-end-infrastructure": "lzsoft/front-end-infrastructure"
+        "avalon-front-end-infrastructure": "lzsoft/avalon-front-end-infrastructure"
     }
 }
