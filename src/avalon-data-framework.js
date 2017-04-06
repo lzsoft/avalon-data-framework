@@ -234,7 +234,7 @@
                 e.stopPropagation();
                 let query = self.gather(self, true);
                 if (self.hasAttribute(ATTR_URL)) {
-                    done(await (await window.Lzsoft.Api.Get(self.getAttribute(ATTR_URL), query)).json());
+                    done(await window.Lzsoft.Api.Get(self.getAttribute(ATTR_URL), query));
                 } else if (self.hasAttribute(ATTR_JSON)) {
                     done(JSON.parse(self.getAttribute(ATTR_JSON)));
                 } else {
@@ -250,18 +250,16 @@
                 e.stopPropagation();
                 let query = self.gather(self, false);
                 if (self.hasAttribute(ATTR_URL)) {
-                    done(await (await window.Lzsoft.Api.Put(self.getAttribute(ATTR_URL), query)).json());
+                    await window.Lzsoft.Api.Put(self.getAttribute(ATTR_URL), query)
+                    done();
                 } else if (self.hasAttribute(ATTR_JSON)) {
                     self.setAttribute(ATTR_JSON, JSON.stringify(query));
-                    done(query);
+                    done();
                 } else {
-                    done(null);
+                    done();
                 }
 
-                function done(json) {
-                    if (json) {
-                        self.render(self, json, true);
-                    }
+                function done() {
                     self.dispatchEvent(new Event(EVENT_PUT_DONE));
                 }
             });
