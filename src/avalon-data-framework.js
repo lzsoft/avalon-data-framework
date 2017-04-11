@@ -123,7 +123,7 @@
 
                 function analyzeTemplate(e, name, template) {
                     if (dataDefinitionExist(template) && onlySingleSourceExist(template)) {
-                        let spadDataList = template.replace(KEYWORD_DATA_OPEN, "").replace(KEYWORD_DATA_CLOSE, "").split(KEYWORD_SPLITTER);
+                        let spadDataList = self.extractDef(self.extractTemplate(template));
                         let param = "";
                         let val = "";
                         for (let spadDataName of spadDataList) {
@@ -284,7 +284,7 @@
             }
 
             function renderArray(templateElement, templateTemplate) {
-                let keywords = templateTemplate.replace(KEYWORD_DATA_OPEN, "").replace(KEYWORD_DATA_CLOSE, "").split(KEYWORD_SPLITTER);
+                let keywords = self.extractDef(self.extractTemplate(templateTemplate));
                 let path = keywords.shift();
                 let value = getDeepValue(data, path) || []; // which is an array
                 for (let es of templateElement[PROPERTY_SPAD][PROPERTY_SPAD_ENTITY_LIST]) {
@@ -299,7 +299,7 @@
             }
 
             function renderProperty(element, name, template) {
-                let keywords = template.replace(KEYWORD_DATA_OPEN, "").replace(KEYWORD_DATA_CLOSE, "").split(KEYWORD_SPLITTER);
+                let keywords = self.extractDef(self.extractTemplate(template));
                 let path = keywords.shift();
                 let value = getDeepValue(data, path);
                 switch (true) {
@@ -337,10 +337,10 @@
                 }
                 switch (name) {
                     case "":
-                        element.textContent = value || "";
+                        element.textContent = template.replace(self.extractTemplate(template), value || "");
                         break;
                     case "value":
-                        element.value = value || "";
+                        element.value = template.replace(self.extractTemplate(template), value || "");
                         break;
                     case "checked":
                         if (value) {
@@ -353,7 +353,7 @@
                         if (!value && value !== 0) {
                             element.removeAttribute(name);
                         } else {
-                            element.setAttribute(name, value);
+                            element.setAttribute(name, template.replace(self.extractTemplate(template), value || ""));
                         }
                         break;
                 }
@@ -389,7 +389,7 @@
             }
 
             function gatherArray(templateElement, templateTemplate) {
-                let path = templateTemplate.replace(KEYWORD_DATA_OPEN, "").replace(KEYWORD_DATA_CLOSE, "").split(KEYWORD_SPLITTER).shift();
+                let path = self.extractDef(self.extractTemplate(templateTemplate)).shift();
                 let value = [];
                 let elementList = templateElement[PROPERTY_SPAD][PROPERTY_SPAD_ENTITY_LIST];
                 for (let elementSummary of elementList) {
@@ -412,7 +412,7 @@
             }
 
             function gatherProperty(element, name, template) {
-                let keywords = template.replace(KEYWORD_DATA_OPEN, "").replace(KEYWORD_DATA_CLOSE, "").split(KEYWORD_SPLITTER);
+                let keywords = self.extractDef(self.extractTemplate(template));
                 let path = keywords.shift();
                 let value = null;
                 switch (name) {
@@ -480,6 +480,12 @@
             this.validate();
             this.analyze(this);
             this.eventize();
+        }
+        extractTemplate(template) {
+            return template.substring(template.indexOf(KEYWORD_DATA_OPEN), template.indexOf(KEYWORD_DATA_CLOSE) + 2);
+        }
+        extractDef(extractedTemplate) {
+            return extractedTemplate.replace(KEYWORD_DATA_OPEN, "").replace(KEYWORD_DATA_CLOSE, "").split(KEYWORD_SPLITTER);
         }
     });
 }
