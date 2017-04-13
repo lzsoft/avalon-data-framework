@@ -190,7 +190,7 @@
                             if (param) {
                                 e.setAttribute(name, window.location.getParam(param));
                             }
-                            if (val) {
+                            if (val || val === 0) {
                                 e.setAttribute(name, val);
                             }
                         } else {
@@ -199,7 +199,7 @@
                             if (param) {
                                 e.textContent = window.location.getParam(param);
                             }
-                            if (val) {
+                            if (val || val === 0) {
                                 e.textContent = val;
                             }
                         }
@@ -276,7 +276,8 @@
                     renderArray(e, attributeMap.get(ATTR_LOOP));
                 } else {
                     for (let a of attributeMap.keys()) {
-                        if (attributeMap.get(a).indexOf(onlyIdentifier ? KEYWORD_SPLITTER + KEYWORD_IDENTIFIER : KEYWORD_SPLITTER + KEYWORD_GET) > -1) {
+                        // If the attribute is not fixed by VAL and PARAM, and have IDENTIFIER/GET defined, then render it
+                        if (attributeMap.get(a).indexOf(onlyIdentifier ? KEYWORD_SPLITTER + KEYWORD_IDENTIFIER : KEYWORD_SPLITTER + KEYWORD_GET) > -1 && attributeMap.get(a).indexOf(KEYWORD_SPLITTER + KEYWORD_PARAM) === -1 && attributeMap.get(a).indexOf(KEYWORD_SPLITTER + KEYWORD_VAL) === -1) {
                             renderProperty(e, a, attributeMap.get(a));
                         }
                     }
