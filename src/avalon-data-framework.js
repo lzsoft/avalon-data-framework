@@ -250,16 +250,16 @@
                 e.stopPropagation();
                 let query = self.gather(self, false);
                 if (self.hasAttribute(ATTR_URL)) {
-                    await window.Lzsoft.Api.Put(self.getAttribute(ATTR_URL), query)
-                    done();
+                    done(await window.Lzsoft.Api.Put(self.getAttribute(ATTR_URL), query));
                 } else if (self.hasAttribute(ATTR_JSON)) {
                     self.setAttribute(ATTR_JSON, JSON.stringify(query));
-                    done();
+                    done(null);
                 } else {
-                    done();
+                    done(null);
                 }
 
-                function done() {
+                function done(json) {
+                    self.render(self, json, false);
                     self.dispatchEvent(new Event(EVENT_PUT_DONE));
                 }
             });
@@ -267,9 +267,9 @@
                 self.dispatchEvent(new Event(EVENT_GET));
             }
         }
-        render(root, data, onlyIdentifier) {
+        render(root, data) {
             let self = this;
-            let inElements = onlyIdentifier ? root[PROPERTY_SPAD][PROPERTY_SPAD_ELEMENT_SUMMARY][KEYWORD_IDENTIFIER] : root[PROPERTY_SPAD][PROPERTY_SPAD_ELEMENT_SUMMARY][KEYWORD_GET];
+            let inElements = root[PROPERTY_SPAD][PROPERTY_SPAD_ELEMENT_SUMMARY][KEYWORD_GET];
             for (let e of inElements) {
                 let attributeMap = e[PROPERTY_SPAD][PROPERTY_SPAD_TEMPLATE_MAP];
                 if (e.tagName === "TEMPLATE" && attributeMap.has(ATTR_LOOP)) {
@@ -277,7 +277,7 @@
                 } else {
                     for (let a of attributeMap.keys()) {
                         // If the attribute is not fixed by VAL and PARAM, and have IDENTIFIER/GET defined, then render it
-                        if (attributeMap.get(a).indexOf(onlyIdentifier ? KEYWORD_SPLITTER + KEYWORD_IDENTIFIER : KEYWORD_SPLITTER + KEYWORD_GET) > -1 && attributeMap.get(a).indexOf(KEYWORD_SPLITTER + KEYWORD_PARAM) === -1 && attributeMap.get(a).indexOf(KEYWORD_SPLITTER + KEYWORD_VAL) === -1) {
+                        if (attributeMap.get(a).indexOf(KEYWORD_SPLITTER + KEYWORD_GET) > -1) {
                             renderProperty(e, a, attributeMap.get(a));
                         }
                     }
