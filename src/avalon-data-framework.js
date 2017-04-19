@@ -13,7 +13,7 @@
     //
     // PROPERTY is the analysis result or related data attached to the <element> as JavaScript Object Property in form like element["property"].
     //
-    const PROPERTY_SPAD = "lzsoft-spad";
+    const PROPERTY_SPAD = "tingting-adf";
     const PROPERTY_SPAD_ELEMENT_SUMMARY = "element-summary"; // GET, PUT, IDENTIFIER.
     const PROPERTY_SPAD_TEMPLATE_MAP = "template-map"; // "value": "{{name:GET:PUT}}".
     const PROPERTY_SPAD_ENTITY_LIST = "entity-list"; // [<entity-element-set>, <entity-element-set>].
@@ -234,7 +234,7 @@
                 e.stopPropagation();
                 let query = self.gather(self, true);
                 if (self.hasAttribute(ATTR_URL)) {
-                    done(await window.Lzsoft.Api.Get(self.getAttribute(ATTR_URL), query));
+                    done(await window.tingting.api.get(self.getAttribute(ATTR_URL), query));
                 } else if (self.hasAttribute(ATTR_JSON)) {
                     done(JSON.parse(self.getAttribute(ATTR_JSON)));
                 } else {
@@ -250,7 +250,7 @@
                 e.stopPropagation();
                 let query = self.gather(self, false);
                 if (self.hasAttribute(ATTR_URL)) {
-                    done(await window.Lzsoft.Api.Put(self.getAttribute(ATTR_URL), query));
+                    done(await window.tingting.api.put(self.getAttribute(ATTR_URL), query));
                 } else if (self.hasAttribute(ATTR_JSON)) {
                     self.setAttribute(ATTR_JSON, JSON.stringify(query));
                     done(null);
