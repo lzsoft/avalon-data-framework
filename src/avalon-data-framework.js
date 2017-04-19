@@ -50,7 +50,6 @@
     //
     window.customElements.define('avalon-data-framework', class extends HTMLElement {
         validate() {
-            let self = this;
             return true;
         }
         analyze(root) {
@@ -234,7 +233,7 @@
                 e.stopPropagation();
                 let query = self.gather(self, true);
                 if (self.hasAttribute(ATTR_URL)) {
-                    done(await window.tingting.api.get(self.getAttribute(ATTR_URL), query));
+                    done(await window.Lzsoft.Api.Get(self.getAttribute(ATTR_URL), query));
                 } else if (self.hasAttribute(ATTR_JSON)) {
                     done(JSON.parse(self.getAttribute(ATTR_JSON)));
                 } else {
@@ -250,7 +249,7 @@
                 e.stopPropagation();
                 let query = self.gather(self, false);
                 if (self.hasAttribute(ATTR_URL)) {
-                    done(await window.tingting.api.put(self.getAttribute(ATTR_URL), query));
+                    done(await window.Lzsoft.Api.Put(self.getAttribute(ATTR_URL), query));
                 } else if (self.hasAttribute(ATTR_JSON)) {
                     self.setAttribute(ATTR_JSON, JSON.stringify(query));
                     done(null);
@@ -263,9 +262,6 @@
                     self.dispatchEvent(new Event(EVENT_PUT_DONE));
                 }
             });
-            if (self.hasAttribute(ATTR_AUTO_GET)) {
-                self.dispatchEvent(new Event(EVENT_GET));
-            }
         }
         render(root, data) {
             let self = this;
@@ -476,11 +472,14 @@
         }
         constructor() {
             super();
-        }
-        connectedCallback() {
             this.validate();
             this.analyze(this);
             this.eventize();
+        }
+        connectedCallback() {
+            if (this.hasAttribute(ATTR_AUTO_GET)) {
+                this.dispatchEvent(new Event(EVENT_GET));
+            }
         }
         extractTemplate(template) {
             return template.substring(template.indexOf(KEYWORD_DATA_OPEN), template.indexOf(KEYWORD_DATA_CLOSE) + 2);
