@@ -242,7 +242,7 @@
 
                 function done(json) {
                     self.render(self, json, false);
-                    self.dispatchEvent(new Event(EVENT_GET_DONE));
+                    self.dispatchEvent(new CustomEvent(EVENT_GET_DONE, { detail: json }));
                 }
             });
             self.addEventListener(EVENT_PUT, async function(e) {
@@ -252,14 +252,14 @@
                     done(await window.tingting.api.put(self.getAttribute(ATTR_URL), query));
                 } else if (self.hasAttribute(ATTR_JSON)) {
                     self.setAttribute(ATTR_JSON, JSON.stringify(query));
-                    done(null);
+                    done(query);
                 } else {
                     done(null);
                 }
 
                 function done(json) {
                     self.render(self, json, false);
-                    self.dispatchEvent(new Event(EVENT_PUT_DONE));
+                    self.dispatchEvent(new CustomEvent(EVENT_PUT_DONE, { detail: json }));
                 }
             });
         }
