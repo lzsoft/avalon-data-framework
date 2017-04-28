@@ -1,6 +1,7 @@
 {
     "name": "avalon-data-framework",
     "main": "avalon-data-framework.html",
+    "version": "1.0.0",
     "description": "This is a MVC framework for internal use only. It provides a highly compact sync framework for CRUD actions between browser and server.",
     "license": "MIT",
     "homepage": "https://github.com/tingting-io/avalon-data-framework",
