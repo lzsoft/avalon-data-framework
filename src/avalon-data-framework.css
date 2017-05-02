@@ -13,6 +13,7 @@ avalon-data-framework:before {
     background-color: white;
     opacity: 0;
     transition: opacity 0.2s;
+    z-index: 111;
 }
 
 avalon-data-framework:after {
@@ -26,6 +27,7 @@ avalon-data-framework:after {
     transition: opacity 0.2s, height 0.2s, width 0.2s, margin-top 0.2s, margin-left 0.2s;
     background-color: var(--avalon-data-framework-color);
     opacity: 1;
+    z-index: 112;
 }
 
 avalon-data-framework[data-loading]:before {
