@@ -233,40 +233,48 @@
             self.addEventListener(EVENT_GET, async function(e) {
                 e.stopPropagation();
                 if (!self.hasAttribute(ATTR_LOADING)) {
-                    self.setAttribute(ATTR_LOADING, "");
-                    let query = self.gather(self, true);
-                    if (self.hasAttribute(ATTR_URL)) {
-                        done(await window.tingting.api.get(self.getAttribute(ATTR_URL), query));
-                    } else if (self.hasAttribute(ATTR_JSON)) {
-                        done(JSON.parse(self.getAttribute(ATTR_JSON)));
-                    } else {
-                        done(null);
+                    try {
+                        self.setAttribute(ATTR_LOADING, "");
+                        let query = self.gather(self, true);
+                        if (self.hasAttribute(ATTR_URL)) {
+                            done(await window.tingting.api.get(self.getAttribute(ATTR_URL), query));
+                        } else if (self.hasAttribute(ATTR_JSON)) {
+                            done(JSON.parse(self.getAttribute(ATTR_JSON)));
+                        } else {
+                            done(null);
+                        }
+                    } catch (e) {
+                        self.removeAttribute(ATTR_LOADING);
                     }
                 }
 
                 function done(json) {
                     self.render(self, json, false);
-                    self.removeAttribute(ATTR_LOADING, "");
+                    self.removeAttribute(ATTR_LOADING);
                     self.dispatchEvent(new CustomEvent(EVENT_GET_DONE, { detail: json }));
                 }
             });
             self.addEventListener(EVENT_PUT, async function(e) {
                 e.stopPropagation();
                 if (!self.hasAttribute(ATTR_LOADING)) {
-                    let query = self.gather(self, false);
-                    if (self.hasAttribute(ATTR_URL)) {
-                        done(await window.tingting.api.put(self.getAttribute(ATTR_URL), query));
-                    } else if (self.hasAttribute(ATTR_JSON)) {
-                        self.setAttribute(ATTR_JSON, JSON.stringify(query));
-                        done(query);
-                    } else {
-                        done(null);
+                    try {
+                        let query = self.gather(self, false);
+                        if (self.hasAttribute(ATTR_URL)) {
+                            done(await window.tingting.api.put(self.getAttribute(ATTR_URL), query));
+                        } else if (self.hasAttribute(ATTR_JSON)) {
+                            self.setAttribute(ATTR_JSON, JSON.stringify(query));
+                            done(query);
+                        } else {
+                            done(null);
+                        }
+                    } catch (e) {
+                        self.removeAttribute(ATTR_LOADING);
                     }
                 }
 
                 function done(json) {
                     self.render(self, json, false);
-                    self.removeAttribute(ATTR_LOADING, "");
+                    self.removeAttribute(ATTR_LOADING);
                     self.dispatchEvent(new CustomEvent(EVENT_PUT_DONE, { detail: json }));
                 }
             });
