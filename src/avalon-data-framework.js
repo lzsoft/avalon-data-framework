@@ -233,8 +233,8 @@
             self.addEventListener(EVENT_GET, async function(e) {
                 e.stopPropagation();
                 if (!self.hasAttribute(ATTR_LOADING)) {
+                    self.setAttribute(ATTR_LOADING, "");
                     try {
-                        self.setAttribute(ATTR_LOADING, "");
                         let query = self.gather(self, true);
                         if (self.hasAttribute(ATTR_URL)) {
                             done(await window.tingting.api.get(self.getAttribute(ATTR_URL), query));
@@ -257,6 +257,7 @@
             self.addEventListener(EVENT_PUT, async function(e) {
                 e.stopPropagation();
                 if (!self.hasAttribute(ATTR_LOADING)) {
+                    self.setAttribute(ATTR_LOADING, "");
                     try {
                         let query = self.gather(self, false);
                         if (self.hasAttribute(ATTR_URL)) {
