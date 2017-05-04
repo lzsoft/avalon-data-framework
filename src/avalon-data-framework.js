@@ -146,7 +146,7 @@
                                     val = spadDataName.replace(KEYWORD_VAL, '').replace(KEYWORD_PARAM_OPEN, '').replace(KEYWORD_PARAM_CLOSE, '');
                                     break;
                                 case spadDataName.includes(KEYWORD_SEGMENT):
-                                    segment = window.location.getPathLastSegment;
+                                    segment = window.location.getPathLastSegment();
                                     break;
                             }
                         }
