@@ -34,6 +34,7 @@
     const KEYWORD_TIME = "TIME";
     const KEYWORD_PARAM = "PARAM";
     const KEYWORD_VAL = "VAL";
+    const KEYWORD_SEGMENT = "SEGMENT";
     const KEYWORD_DATA_OPEN = "{{";
     const KEYWORD_DATA_CLOSE = "}}";
     const KEYWORD_EVENT_OPEN = "[[";
@@ -117,7 +118,7 @@
                     }
 
                     function eventDefinitionExist(t) {
-                        return value.indexOf(KEYWORD_EVENT_OPEN) > -1 && value.indexOf(KEYWORD_EVENT_CLOSE) > -1 && value.indexOf(KEYWORD_EVENT_OPEN) < value.indexOf(KEYWORD_EVENT_CLOSE);
+                        return value.includes(KEYWORD_EVENT_OPEN) && value.includes(KEYWORD_EVENT_CLOSE) && value.indexOf(KEYWORD_EVENT_OPEN) < value.indexOf(KEYWORD_EVENT_CLOSE);
                     }
                 }
 
@@ -126,6 +127,7 @@
                         let spadDataList = self.extractDef(self.extractTemplate(template));
                         let param = "";
                         let val = "";
+                        let segment = "";
                         for (let spadDataName of spadDataList) {
                             switch (true) {
                                 case spadDataName === KEYWORD_IDENTIFIER:
@@ -137,11 +139,14 @@
                                 case spadDataName === KEYWORD_PUT:
                                     root[PROPERTY_SPAD][PROPERTY_SPAD_ELEMENT_SUMMARY][KEYWORD_PUT].add(e);
                                     break;
-                                case spadDataName.indexOf(KEYWORD_PARAM) > -1:
-                                    param = spadDataName.replace(KEYWORD_PARAM, '').replace(KEYWORD_PARAM_OPEN, '').replace(KEYWORD_PARAM_CLOSE, '');
+                                case spadDataName.includes(KEYWORD_PARAM):
+                                    param = window.location.getParam(spadDataName.replace(KEYWORD_PARAM, '').replace(KEYWORD_PARAM_OPEN, '').replace(KEYWORD_PARAM_CLOSE, ''));
                                     break;
-                                case spadDataName.indexOf(KEYWORD_VAL) > -1:
+                                case spadDataName.includes(KEYWORD_VAL):
                                     val = spadDataName.replace(KEYWORD_VAL, '').replace(KEYWORD_PARAM_OPEN, '').replace(KEYWORD_PARAM_CLOSE, '');
+                                    break;
+                                case spadDataName.includes(KEYWORD_SEGMENT):
+                                    segment = window.location.getPathLastSegment;
                                     break;
                             }
                         }
@@ -188,19 +193,25 @@
                             // Attribute
                             e.removeAttribute(name);
                             if (param) {
-                                e.setAttribute(name, window.location.getParam(param));
+                                e.setAttribute(name, template.replace(self.extractTemplate(template), param));
                             }
                             if (val || val === 0) {
-                                e.setAttribute(name, val);
+                                e.setAttribute(name, template.replace(self.extractTemplate(template), val));
+                            }
+                            if (segment) {
+                                e.setAttribute(name, template.replace(self.extractTemplate(template), segment));
                             }
                         } else {
                             // Content
                             e.textContent = "";
                             if (param) {
-                                e.textContent = window.location.getParam(param);
+                                e.textContent = template.replace(self.extractTemplate(template), param);
                             }
                             if (val || val === 0) {
-                                e.textContent = val;
+                                e.textContent = template.replace(self.extractTemplate(template), val);
+                            }
+                            if (segment) {
+                                e.textContent = template.replace(self.extractTemplate(template), segment);
                             }
                         }
                         return true;
@@ -209,7 +220,7 @@
                     }
 
                     function dataDefinitionExist(t) {
-                        return t.indexOf(KEYWORD_DATA_OPEN) > -1 && t.indexOf(KEYWORD_DATA_CLOSE) > -1 && t.indexOf(KEYWORD_DATA_OPEN) < t.indexOf(KEYWORD_DATA_CLOSE);
+                        return t.includes(KEYWORD_DATA_OPEN) && t.includes(KEYWORD_DATA_CLOSE) && t.indexOf(KEYWORD_DATA_OPEN) < t.indexOf(KEYWORD_DATA_CLOSE);
                     }
 
                     function onlySingleSourceExist(t) {
@@ -290,7 +301,7 @@
                 } else {
                     for (let a of attributeMap.keys()) {
                         // If the attribute is not fixed by VAL and PARAM, and have IDENTIFIER/GET defined, then render it
-                        if (attributeMap.get(a).indexOf(KEYWORD_SPLITTER + KEYWORD_GET) > -1) {
+                        if (attributeMap.get(a).includes(KEYWORD_SPLITTER + KEYWORD_GET)) {
                             renderProperty(e, a, attributeMap.get(a));
                         }
                     }
@@ -317,32 +328,32 @@
                 let path = keywords.shift();
                 let value = getDeepValue(data, path);
                 switch (true) {
-                    case keywords.indexOf(KEYWORD_JSON) > -1:
+                    case keywords.includes(KEYWORD_JSON):
                         try {
                             value = JSON.stringify(value);
                         } catch (e) {
                             value = "";
                         }
                         break;
-                    case keywords.indexOf(KEYWORD_STRING) > -1:
+                    case keywords.includes(KEYWORD_STRING):
                         value = value.toString();
                         break;
-                    case keywords.indexOf(KEYWORD_INTEGER) > -1:
+                    case keywords.includes(KEYWORD_INTEGER):
                         value = value || 0;
                         break;
-                    case keywords.indexOf(KEYWORD_FLOAT) > -1:
+                    case keywords.includes(KEYWORD_FLOAT):
                         value = value || 0;
                         break;
-                    case keywords.indexOf(KEYWORD_BOOLEAN) > -1:
+                    case keywords.includes(KEYWORD_BOOLEAN):
                         value = value.toString();
                         break;
-                    case keywords.indexOf(KEYWORD_DATE) > -1:
+                    case keywords.includes(KEYWORD_DATE):
                         {
                             let d = new Date(value);
                             value = d.toLocaleDateString();
                             break;
                         }
-                    case keywords.indexOf(KEYWORD_TIME) > -1:
+                    case keywords.includes(KEYWORD_TIME):
                         {
                             let t = new Date(value);
                             value = t.toLocaleTimeString();
@@ -395,7 +406,7 @@
                     gatherArray(e, attributeMap.get(ATTR_LOOP));
                 } else {
                     for (let a of attributeMap.keys()) {
-                        if (attributeMap.get(a).indexOf(onlyIdentifier ? KEYWORD_SPLITTER + KEYWORD_IDENTIFIER : KEYWORD_SPLITTER + KEYWORD_PUT) > -1) {
+                        if (attributeMap.get(a).includes(onlyIdentifier ? KEYWORD_SPLITTER + KEYWORD_IDENTIFIER : KEYWORD_SPLITTER + KEYWORD_PUT)) {
                             gatherProperty(e, a, attributeMap.get(a));
                         }
                     }
@@ -444,27 +455,27 @@
                         break;
                 }
                 switch (true) {
-                    case keywords.indexOf(KEYWORD_JSON) > -1:
+                    case keywords.includes(KEYWORD_JSON):
                         try {
                             value = JSON.parse(value);
                         } catch (e) {
                             value = null;
                         }
                         break;
-                    case keywords.indexOf(KEYWORD_STRING) > -1:
+                    case keywords.includes(KEYWORD_STRING):
                         value = value.toString();
                         break;
-                    case keywords.indexOf(KEYWORD_INTEGER) > -1:
+                    case keywords.includes(KEYWORD_INTEGER):
                         value = parseInt(value, 10) || 0;
                         break;
-                    case keywords.indexOf(KEYWORD_FLOAT) > -1:
+                    case keywords.includes(KEYWORD_FLOAT):
                         value = parseFloat(value) || 0;
                         break;
-                    case keywords.indexOf(KEYWORD_BOOLEAN) > -1:
+                    case keywords.includes(KEYWORD_BOOLEAN):
                         value = (value === 'true');
                         break;
-                    case keywords.indexOf(KEYWORD_DATE) > -1:
-                    case keywords.indexOf(KEYWORD_TIME) > -1:
+                    case keywords.includes(KEYWORD_DATE):
+                    case keywords.includes(KEYWORD_TIME):
                         value = new Date(value);
                         break;
                 }
