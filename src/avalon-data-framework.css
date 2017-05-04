@@ -3,19 +3,6 @@ avalon-data-framework {
     --avalon-data-framework-color: #999;
 }
 
-avalon-data-framework:before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    height: 0;
-    width: 0;
-    background-color: white;
-    opacity: 0;
-    transition: opacity 0.2s;
-    z-index: 111;
-}
-
 avalon-data-framework:after {
     content: "";
     border-radius: 50%;
@@ -28,14 +15,6 @@ avalon-data-framework:after {
     background-color: var(--avalon-data-framework-color);
     opacity: 1;
     z-index: 112;
-}
-
-avalon-data-framework[data-loading]:before {
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
-    opacity: 1;
 }
 
 avalon-data-framework[data-loading]:after {
