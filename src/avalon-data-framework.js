@@ -14,11 +14,11 @@
     //
     // PROPERTY is the analysis result or related data attached to the <element> as JavaScript Object Property in form like element["property"].
     //
-    const PROPERTY_SPAD = "tingting-adf";
-    const PROPERTY_SPAD_ELEMENT_SUMMARY = "element-summary"; // GET, PUT, IDENTIFIER.
-    const PROPERTY_SPAD_TEMPLATE_MAP = "template-map"; // "value": "{{name:GET:PUT}}".
-    const PROPERTY_SPAD_ENTITY_LIST = "entity-list"; // [<entity-element-set>, <entity-element-set>].
-    const PROPERTY_SPAD_LOOP_UTIL = "loop-util"; // { appendNewEntity: function(){}, deleteMap: new Map() }
+    const PROPERTY_ADF = "tingting-adf";
+    const PROPERTY_ADF_ELEMENT_SUMMARY = "element-summary"; // GET, PUT, IDENTIFIER.
+    const PROPERTY_ADF_TEMPLATE_MAP = "template-map"; // "value": "{{name:GET:PUT}}".
+    const PROPERTY_ADF_ENTITY_LIST = "entity-list"; // [<entity-element-set>, <entity-element-set>].
+    const PROPERTY_ADF_LOOP_UTIL = "loop-util"; // { appendNewEntity: function(){}, deleteMap: new Map() }
     //
     // KEYWORD is a symbol that used in element data definition, like: value="{{name:GET:PUT}}".
     //
@@ -56,8 +56,8 @@
         }
         analyze(root) {
             let self = this;
-            root[PROPERTY_SPAD] = root[PROPERTY_SPAD] || {};
-            root[PROPERTY_SPAD][PROPERTY_SPAD_ELEMENT_SUMMARY] = {
+            root[PROPERTY_ADF] = root[PROPERTY_ADF] || {};
+            root[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY] = {
                 [KEYWORD_GET]: new Set(),
                 [KEYWORD_PUT]: new Set(),
                 [KEYWORD_IDENTIFIER]: new Set()
@@ -84,21 +84,19 @@
 
             function analyzeElement(e) {
                 e.setAttribute(ATTR_ANALYZING, "");
-                e[PROPERTY_SPAD] = e[PROPERTY_SPAD] || {};
+                e[PROPERTY_ADF] = e[PROPERTY_ADF] || {};
+                e[PROPERTY_ADF][PROPERTY_ADF_TEMPLATE_MAP] = e[PROPERTY_ADF][PROPERTY_ADF_TEMPLATE_MAP] || new Map();
                 // Content
                 if (e.children.length === 0) {
                     analyzeTemplate(e, "", e.textContent);
                 }
                 // Attribute
                 let p = 0;
-                let al = e.attributes;
+                let al = Array.from(e.attributes);
                 while (p < al.length) {
-                    let processed = false;
-                    processed = processed || analyzeTemplate(e, al[p].name, al[p].value);
-                    processed = processed || analyzeEvent(e, al[p].name, al[p].value);
-                    if (!processed) {
-                        p++;
-                    }
+                    analyzeTemplate(e, al[p].name, al[p].value);
+                    analyzeEvent(e, al[p].name, al[p].value);
+                    p++;
                 }
                 e.removeAttribute(ATTR_ANALYZING);
 
@@ -118,123 +116,111 @@
                     }
 
                     function eventDefinitionExist(t) {
-                        return value.includes(KEYWORD_EVENT_OPEN) && value.includes(KEYWORD_EVENT_CLOSE) && value.indexOf(KEYWORD_EVENT_OPEN) < value.indexOf(KEYWORD_EVENT_CLOSE);
+                        return value.includes(KEYWORD_EVENT_OPEN) && value.includes(KEYWORD_EVENT_CLOSE) && value.indexOf(KEYWORD_EVENT_OPEN) < value.indexOf(KEYWORD_EVENT_CLOSE) && value.indexOf(KEYWORD_EVENT_OPEN) === 0;
                     }
                 }
 
                 function analyzeTemplate(e, name, template) {
-                    if (dataDefinitionExist(template) && onlySingleSourceExist(template)) {
-                        let spadDataList = self.extractDef(self.extractTemplate(template));
+                    let processingTemplate = template;
+                    while (self.dataDefinitionExist(processingTemplate)) {
+                        let currentTemplate = self.extractFirstTemplate(processingTemplate);
+                        let keywords = self.extractDef(currentTemplate);
                         let param = "";
                         let val = "";
                         let segment = "";
-                        for (let spadDataName of spadDataList) {
+                        for (let k of keywords) {
                             switch (true) {
-                                case spadDataName === KEYWORD_IDENTIFIER:
-                                    root[PROPERTY_SPAD][PROPERTY_SPAD_ELEMENT_SUMMARY][KEYWORD_IDENTIFIER].add(e);
+                                case k === KEYWORD_IDENTIFIER:
+                                    root[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY][KEYWORD_IDENTIFIER].add(e);
                                     break;
-                                case spadDataName === KEYWORD_GET:
-                                    root[PROPERTY_SPAD][PROPERTY_SPAD_ELEMENT_SUMMARY][KEYWORD_GET].add(e);
+                                case k === KEYWORD_GET:
+                                    root[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY][KEYWORD_GET].add(e);
                                     break;
-                                case spadDataName === KEYWORD_PUT:
-                                    root[PROPERTY_SPAD][PROPERTY_SPAD_ELEMENT_SUMMARY][KEYWORD_PUT].add(e);
+                                case k === KEYWORD_PUT:
+                                    root[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY][KEYWORD_PUT].add(e);
                                     break;
-                                case spadDataName.includes(KEYWORD_PARAM):
-                                    param = window.location.getParam(spadDataName.replace(KEYWORD_PARAM, '').replace(KEYWORD_PARAM_OPEN, '').replace(KEYWORD_PARAM_CLOSE, ''));
+                                case k.includes(KEYWORD_PARAM):
+                                    param = window.location.getParam(k.replace(KEYWORD_PARAM, '').replace(KEYWORD_PARAM_OPEN, '').replace(KEYWORD_PARAM_CLOSE, ''));
                                     break;
-                                case spadDataName.includes(KEYWORD_VAL):
-                                    val = spadDataName.replace(KEYWORD_VAL, '').replace(KEYWORD_PARAM_OPEN, '').replace(KEYWORD_PARAM_CLOSE, '');
+                                case k.includes(KEYWORD_VAL):
+                                    val = k.replace(KEYWORD_VAL, '').replace(KEYWORD_PARAM_OPEN, '').replace(KEYWORD_PARAM_CLOSE, '');
                                     break;
-                                case spadDataName.includes(KEYWORD_SEGMENT):
+                                case k.includes(KEYWORD_SEGMENT):
                                     segment = window.location.getPathLastSegment();
                                     break;
                             }
-                        }
-                        e[PROPERTY_SPAD][PROPERTY_SPAD_TEMPLATE_MAP] = e[PROPERTY_SPAD][PROPERTY_SPAD_TEMPLATE_MAP] || new Map();
-                        e[PROPERTY_SPAD][PROPERTY_SPAD_TEMPLATE_MAP].set(name, template);
-                        if (e instanceof HTMLTemplateElement && e.hasAttribute(ATTR_LOOP)) {
-                            e[PROPERTY_SPAD][PROPERTY_SPAD_ENTITY_LIST] = [];
-                            e[PROPERTY_SPAD][PROPERTY_SPAD_LOOP_UTIL] = {};
-                            // template function
-                            e[PROPERTY_SPAD][PROPERTY_SPAD_LOOP_UTIL].deleteMap = new Map();
-                            e[PROPERTY_SPAD][PROPERTY_SPAD_LOOP_UTIL].appendNewEntity = function(data, outAfter) {
-                                let holder = document.createElement("div");
-                                holder.innerHTML = e.innerHTML;
-                                self.analyze(holder);
-                                self.render(holder, data);
-                                let childTotal = [];
-                                for (let deleter of holder.querySelectorAll('[' + ATTR_LOOP_DELETE + ']')) {
-                                    e[PROPERTY_SPAD][PROPERTY_SPAD_LOOP_UTIL].deleteMap.set(deleter, childTotal);
-                                    deleter.addEventListener("click", function() {
-                                        e[PROPERTY_SPAD][PROPERTY_SPAD_LOOP_UTIL].deleteAllEntity(deleter, true);
-                                    });
-                                }
-                                while (holder.firstChild) {
-                                    childTotal.push(holder.firstChild);
-                                    e.parentNode.appendChild(holder.firstChild);
-                                }
-                                e[PROPERTY_SPAD][PROPERTY_SPAD_ENTITY_LIST].push(holder[PROPERTY_SPAD][PROPERTY_SPAD_ELEMENT_SUMMARY]);
-                                if (outAfter) {
-                                    self.dispatchEvent(new Event(EVENT_PUT));
-                                }
-                            };
-                            e[PROPERTY_SPAD][PROPERTY_SPAD_LOOP_UTIL].deleteAllEntity = function(deleter, outAfter) {
-                                let m = e[PROPERTY_SPAD][PROPERTY_SPAD_LOOP_UTIL].deleteMap.get(deleter);
-                                for (let c of m) {
-                                    c.remove();
-                                }
-                                if (outAfter) {
-                                    self.dispatchEvent(new Event(EVENT_PUT));
-                                }
-                            };
-                            // template function
                         }
                         if (name) {
                             // Attribute
                             e.removeAttribute(name);
                             if (param) {
-                                e.setAttribute(name, template.replace(self.extractTemplate(template), param));
+                                e.setAttribute(name, processingTemplate.replace(currentTemplate, param));
                             }
                             if (val || val === 0) {
-                                e.setAttribute(name, template.replace(self.extractTemplate(template), val));
+                                e.setAttribute(name, processingTemplate.replace(currentTemplate, val));
                             }
                             if (segment) {
-                                e.setAttribute(name, template.replace(self.extractTemplate(template), segment));
+                                e.setAttribute(name, processingTemplate.replace(currentTemplate, segment));
                             }
                         } else {
                             // Content
                             e.textContent = "";
                             if (param) {
-                                e.textContent = template.replace(self.extractTemplate(template), param);
+                                e.textContent = processingTemplate.replace(currentTemplate, param);
                             }
                             if (val || val === 0) {
-                                e.textContent = template.replace(self.extractTemplate(template), val);
+                                e.textContent = processingTemplate.replace(currentTemplate, val);
                             }
                             if (segment) {
-                                e.textContent = template.replace(self.extractTemplate(template), segment);
+                                e.textContent = processingTemplate.replace(currentTemplate, segment);
                             }
                         }
+                        processingTemplate = processingTemplate.replace(currentTemplate, '');
+                    }
+                    // If e is a <template> for looping
+                    if (e instanceof HTMLTemplateElement && e.hasAttribute(ATTR_LOOP)) {
+                        e[PROPERTY_ADF][PROPERTY_ADF_ENTITY_LIST] = [];
+                        e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL] = {};
+                        // template function
+                        e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteMap = new Map();
+                        e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].appendNewEntity = function(data, outAfter) {
+                            let holder = document.createElement("div");
+                            holder.innerHTML = e.innerHTML;
+                            self.analyze(holder);
+                            self.render(holder, data);
+                            let childTotal = [];
+                            for (let deleter of holder.querySelectorAll('[' + ATTR_LOOP_DELETE + ']')) {
+                                e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteMap.set(deleter, childTotal);
+                                deleter.addEventListener("click", function() {
+                                    e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteAllEntity(deleter, true);
+                                });
+                            }
+                            while (holder.firstChild) {
+                                childTotal.push(holder.firstChild);
+                                e.parentNode.appendChild(holder.firstChild);
+                            }
+                            e[PROPERTY_ADF][PROPERTY_ADF_ENTITY_LIST].push(holder[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY]);
+                            if (outAfter) {
+                                self.dispatchEvent(new Event(EVENT_PUT));
+                            }
+                        };
+                        e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteAllEntity = function(deleter, outAfter) {
+                            let m = e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteMap.get(deleter);
+                            for (let c of m) {
+                                c.remove();
+                            }
+                            if (outAfter) {
+                                self.dispatchEvent(new Event(EVENT_PUT));
+                            }
+                        };
+                        // template function
+                    }
+                    //
+                    if (processingTemplate !== template) {
+                        e[PROPERTY_ADF][PROPERTY_ADF_TEMPLATE_MAP].set(name, template);
                         return true;
                     } else {
                         return false;
-                    }
-
-                    function dataDefinitionExist(t) {
-                        return t.includes(KEYWORD_DATA_OPEN) && t.includes(KEYWORD_DATA_CLOSE) && t.indexOf(KEYWORD_DATA_OPEN) < t.indexOf(KEYWORD_DATA_CLOSE);
-                    }
-
-                    function onlySingleSourceExist(t) {
-                        let passed = true;
-                        if (t.indexOf(KEYWORD_DATA_OPEN) !== t.lastIndexOf(KEYWORD_DATA_OPEN)) {
-                            passed = false;
-                        }
-                        if (t.indexOf(KEYWORD_DATA_CLOSE) !== t.lastIndexOf(KEYWORD_DATA_CLOSE)) {
-                            passed = false;
-                        }
-                        if (!passed) {
-                            throw new Error("An template definition can only contain one single data template, like {{name:PUT}}, while your definition is " + t);
-                        }
-                        return passed;
                     }
                 }
             }
@@ -293,14 +279,13 @@
         }
         render(root, data) {
             let self = this;
-            let inElements = root[PROPERTY_SPAD][PROPERTY_SPAD_ELEMENT_SUMMARY][KEYWORD_GET];
+            let inElements = root[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY][KEYWORD_GET];
             for (let e of inElements) {
-                let attributeMap = e[PROPERTY_SPAD][PROPERTY_SPAD_TEMPLATE_MAP];
+                let attributeMap = e[PROPERTY_ADF][PROPERTY_ADF_TEMPLATE_MAP];
                 if (e.tagName === "TEMPLATE" && attributeMap.has(ATTR_LOOP)) {
                     renderArray(e, attributeMap.get(ATTR_LOOP));
                 } else {
                     for (let a of attributeMap.keys()) {
-                        // If the attribute is not fixed by VAL and PARAM, and have IDENTIFIER/GET defined, then render it
                         if (attributeMap.get(a).includes(KEYWORD_SPLITTER + KEYWORD_GET)) {
                             renderProperty(e, a, attributeMap.get(a));
                         }
@@ -309,76 +294,75 @@
             }
 
             function renderArray(templateElement, templateTemplate) {
-                let keywords = self.extractDef(self.extractTemplate(templateTemplate));
+                let keywords = self.extractDef(self.extractFirstTemplate(templateTemplate));
                 let path = keywords.shift();
                 let value = getDeepValue(data, path) || []; // which is an array
-                for (let es of templateElement[PROPERTY_SPAD][PROPERTY_SPAD_ENTITY_LIST]) {
+                for (let es of templateElement[PROPERTY_ADF][PROPERTY_ADF_ENTITY_LIST]) {
                     for (let e of es[KEYWORD_GET]) {
                         e.remove();
                     }
                 }
-                templateElement[PROPERTY_SPAD][PROPERTY_SPAD_ENTITY_LIST] = [];
+                templateElement[PROPERTY_ADF][PROPERTY_ADF_ENTITY_LIST] = [];
                 for (let v of value) {
-                    templateElement[PROPERTY_SPAD][PROPERTY_SPAD_LOOP_UTIL].appendNewEntity(v, false);
+                    templateElement[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].appendNewEntity(v, false);
                 }
             }
 
             function renderProperty(element, name, template) {
-                let keywords = self.extractDef(self.extractTemplate(template));
-                let path = keywords.shift();
-                let value = getDeepValue(data, path);
-                switch (true) {
-                    case keywords.includes(KEYWORD_JSON):
-                        try {
-                            value = JSON.stringify(value);
-                        } catch (e) {
-                            value = "";
-                        }
-                        break;
-                    case keywords.includes(KEYWORD_STRING):
-                        value = value.toString();
-                        break;
-                    case keywords.includes(KEYWORD_INTEGER):
-                        value = value || 0;
-                        break;
-                    case keywords.includes(KEYWORD_FLOAT):
-                        value = value || 0;
-                        break;
-                    case keywords.includes(KEYWORD_BOOLEAN):
-                        value = value.toString();
-                        break;
-                    case keywords.includes(KEYWORD_DATE):
-                        {
-                            let d = new Date(value);
-                            value = d.toLocaleDateString();
+                let processingTemplate = template;
+                while (self.dataDefinitionExist(processingTemplate)) {
+                    let currentTemplate = self.extractFirstTemplate(processingTemplate);
+                    let keywords = self.extractDef(currentTemplate);
+                    let path = keywords.shift();
+                    let value = getDeepValue(data, path);
+                    switch (true) {
+                        case keywords.includes(KEYWORD_JSON):
+                            try {
+                                value = JSON.stringify(value);
+                            } catch (e) {
+                                value = "";
+                            }
                             break;
-                        }
-                    case keywords.includes(KEYWORD_TIME):
-                        {
-                            let t = new Date(value);
-                            value = t.toLocaleTimeString();
+                        case keywords.includes(KEYWORD_STRING):
+                            value = value.toString();
                             break;
-                        }
+                        case keywords.includes(KEYWORD_INTEGER):
+                            value = value || 0;
+                            break;
+                        case keywords.includes(KEYWORD_FLOAT):
+                            value = value || 0;
+                            break;
+                        case keywords.includes(KEYWORD_BOOLEAN):
+                            value = value.toString();
+                            break;
+                        case keywords.includes(KEYWORD_DATE):
+                            value = (new Date(value)).toLocaleDateString();
+                            break;
+                        case keywords.includes(KEYWORD_TIME):
+                            value = (new Date(value)).toLocaleTimeString();
+                            break;
+                    }
+                    processingTemplate = processingTemplate.replace(currentTemplate, value || '');
                 }
                 switch (name) {
                     case "":
-                        element.textContent = template.replace(self.extractTemplate(template), value || "");
+                        element.textContent = processingTemplate;
                         break;
                     case "value":
-                        element.value = template.replace(self.extractTemplate(template), value || "");
+                        element.value = processingTemplate;
                         break;
                     case "checked":
-                        if (value) {
+                        if (processingTemplate) {
                             element.setAttribute("checked", "");
                         } else {
                             element.removeAttribute("checked");
                         }
                         break;
                     default:
-                        if (!value && value !== 0) {
+                        if (!processingTemplate && processingTemplate !== 0) {
                             element.removeAttribute(name);
                         } else {
-                            element.setAttribute(name, template.replace(self.extractTemplate(template), value || ""));
+                            element.setAttribute(name, processingTemplate);
                         }
                         break;
                 }
@@ -399,9 +383,9 @@
         gather(root, onlyIdentifier) {
             let self = this;
             let data = {};
-            let outElements = onlyIdentifier ? root[PROPERTY_SPAD][PROPERTY_SPAD_ELEMENT_SUMMARY][KEYWORD_IDENTIFIER] : root[PROPERTY_SPAD][PROPERTY_SPAD_ELEMENT_SUMMARY][KEYWORD_PUT];
+            let outElements = onlyIdentifier ? root[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY][KEYWORD_IDENTIFIER] : root[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY][KEYWORD_PUT];
             for (let e of outElements) {
-                let attributeMap = e[PROPERTY_SPAD][PROPERTY_SPAD_TEMPLATE_MAP];
+                let attributeMap = e[PROPERTY_ADF][PROPERTY_ADF_TEMPLATE_MAP];
                 if (e.tagName === "TEMPLATE" && attributeMap.has(ATTR_LOOP)) {
                     gatherArray(e, attributeMap.get(ATTR_LOOP));
                 } else {
@@ -414,9 +398,9 @@
             }
 
             function gatherArray(templateElement, templateTemplate) {
-                let path = self.extractDef(self.extractTemplate(templateTemplate)).shift();
+                let path = self.extractDef(self.extractFirstTemplate(templateTemplate)).shift();
                 let value = [];
-                let elementList = templateElement[PROPERTY_SPAD][PROPERTY_SPAD_ENTITY_LIST];
+                let elementList = templateElement[PROPERTY_ADF][PROPERTY_ADF_ENTITY_LIST];
                 for (let elementSummary of elementList) {
                     let holder = document.createElement("div");
                     for (let e of elementSummary[KEYWORD_PUT]) {
@@ -428,8 +412,8 @@
                         }
                     }
                     if (elementSummary[KEYWORD_PUT].size > 0) {
-                        holder[PROPERTY_SPAD] = {};
-                        holder[PROPERTY_SPAD][PROPERTY_SPAD_ELEMENT_SUMMARY] = elementSummary;
+                        holder[PROPERTY_ADF] = {};
+                        holder[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY] = elementSummary;
                         value.push(self.gather(holder, onlyIdentifier));
                     }
                 }
@@ -437,7 +421,7 @@
             }
 
             function gatherProperty(element, name, template) {
-                let keywords = self.extractDef(self.extractTemplate(template));
+                let keywords = self.extractDef(self.extractFirstTemplate(template));
                 let path = keywords.shift();
                 let value = null;
                 switch (name) {
@@ -509,11 +493,14 @@
                 this.dispatchEvent(new Event(EVENT_GET));
             }
         }
-        extractTemplate(template) {
+        extractFirstTemplate(template) {
             return template.substring(template.indexOf(KEYWORD_DATA_OPEN), template.indexOf(KEYWORD_DATA_CLOSE) + 2);
         }
         extractDef(extractedTemplate) {
             return extractedTemplate.replace(KEYWORD_DATA_OPEN, "").replace(KEYWORD_DATA_CLOSE, "").split(KEYWORD_SPLITTER);
+        }
+        dataDefinitionExist(template) {
+            return template.includes(KEYWORD_DATA_OPEN) && template.includes(KEYWORD_DATA_CLOSE) && template.indexOf(KEYWORD_DATA_OPEN) < template.indexOf(KEYWORD_DATA_CLOSE);
         }
     });
 }
