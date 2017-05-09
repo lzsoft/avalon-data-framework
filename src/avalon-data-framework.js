@@ -86,6 +86,45 @@
                 e.setAttribute(ATTR_ANALYZING, "");
                 e[PROPERTY_ADF] = e[PROPERTY_ADF] || {};
                 e[PROPERTY_ADF][PROPERTY_ADF_TEMPLATE_MAP] = e[PROPERTY_ADF][PROPERTY_ADF_TEMPLATE_MAP] || new Map();
+                // If e is a <template> for looping
+                if (e instanceof HTMLTemplateElement && e.hasAttribute(ATTR_LOOP)) {
+                    e[PROPERTY_ADF][PROPERTY_ADF_ENTITY_LIST] = [];
+                    e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL] = {};
+                    // template function
+                    e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteMap = new Map();
+                    e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].appendNewEntity = function(data, outAfter) {
+                        let holder = document.createElement("div");
+                        holder.innerHTML = e.innerHTML;
+                        self.analyze(holder);
+                        self.render(holder, data);
+                        let childTotal = [];
+                        for (let deleter of holder.querySelectorAll('[' + ATTR_LOOP_DELETE + ']')) {
+                            e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteMap.set(deleter, childTotal);
+                            deleter.addEventListener("click", function() {
+                                e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteAllEntity(deleter, true);
+                            });
+                        }
+                        while (holder.firstChild) {
+                            childTotal.push(holder.firstChild);
+                            e.parentNode.appendChild(holder.firstChild);
+                        }
+                        e[PROPERTY_ADF][PROPERTY_ADF_ENTITY_LIST].push(holder[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY]);
+                        if (outAfter) {
+                            self.dispatchEvent(new Event(EVENT_PUT));
+                        }
+                    };
+                    e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteAllEntity = function(deleter, outAfter) {
+                        let m = e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteMap.get(deleter);
+                        for (let c of m) {
+                            c.remove();
+                        }
+                        if (outAfter) {
+                            self.dispatchEvent(new Event(EVENT_PUT));
+                        }
+                    };
+                    // template function
+                }
+                //
                 // Content
                 if (e.children.length === 0) {
                     analyzeTemplate(e, "", e.textContent);
@@ -122,107 +161,60 @@
 
                 function analyzeTemplate(e, name, template) {
                     let processingTemplate = template;
+                    let processed = false;
+                    let fields = [];
                     while (self.dataDefinitionExist(processingTemplate)) {
+                        processed = true;
                         let currentTemplate = self.extractFirstTemplate(processingTemplate);
                         let keywords = self.extractDef(currentTemplate);
-                        let param = "";
-                        let val = "";
-                        let segment = "";
+                        let field = keywords.shift();
+                        let predefined = "";
                         for (let k of keywords) {
+                            // Predefined Keywords
                             switch (true) {
-                                case k === KEYWORD_IDENTIFIER:
-                                    root[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY][KEYWORD_IDENTIFIER].add(e);
-                                    break;
-                                case k === KEYWORD_GET:
-                                    root[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY][KEYWORD_GET].add(e);
-                                    break;
-                                case k === KEYWORD_PUT:
-                                    root[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY][KEYWORD_PUT].add(e);
-                                    break;
                                 case k.includes(KEYWORD_PARAM):
-                                    param = window.location.getParam(k.replace(KEYWORD_PARAM, '').replace(KEYWORD_PARAM_OPEN, '').replace(KEYWORD_PARAM_CLOSE, ''));
+                                    predefined = window.location.getParam(k.replace(KEYWORD_PARAM, '').replace(KEYWORD_PARAM_OPEN, '').replace(KEYWORD_PARAM_CLOSE, ''));
                                     break;
                                 case k.includes(KEYWORD_VAL):
-                                    val = k.replace(KEYWORD_VAL, '').replace(KEYWORD_PARAM_OPEN, '').replace(KEYWORD_PARAM_CLOSE, '');
+                                    predefined = k.replace(KEYWORD_VAL, '').replace(KEYWORD_PARAM_OPEN, '').replace(KEYWORD_PARAM_CLOSE, '') || 0;
                                     break;
                                 case k.includes(KEYWORD_SEGMENT):
-                                    segment = window.location.getPathLastSegment();
+                                    predefined = window.location.getPathLastSegment();
                                     break;
                             }
                         }
-                        if (name) {
-                            // Attribute
-                            e.removeAttribute(name);
-                            if (param) {
-                                e.setAttribute(name, processingTemplate.replace(currentTemplate, param));
-                            }
-                            if (val || val === 0) {
-                                e.setAttribute(name, processingTemplate.replace(currentTemplate, val));
-                            }
-                            if (segment) {
-                                e.setAttribute(name, processingTemplate.replace(currentTemplate, segment));
-                            }
-                        } else {
-                            // Content
-                            e.textContent = "";
-                            if (param) {
-                                e.textContent = processingTemplate.replace(currentTemplate, param);
-                            }
-                            if (val || val === 0) {
-                                e.textContent = processingTemplate.replace(currentTemplate, val);
-                            }
-                            if (segment) {
-                                e.textContent = processingTemplate.replace(currentTemplate, segment);
-                            }
+                        switch (true) {
+                            case keywords.includes(KEYWORD_IDENTIFIER):
+                                root[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY][KEYWORD_IDENTIFIER].add(e);
+                                break;
+                            case keywords.includes(KEYWORD_GET):
+                                root[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY][KEYWORD_GET].add(e);
+                                break;
+                            case keywords.includes(KEYWORD_PUT):
+                                root[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY][KEYWORD_PUT].add(e);
+                                break;
                         }
-                        processingTemplate = processingTemplate.replace(currentTemplate, '');
+                        fields.push({
+                            field: field,
+                            template: predefined || currentTemplate
+                        });
+                        if (predefined) {
+                            processingTemplate = processingTemplate.replace(currentTemplate, predefined);
+                            template = template.replace(currentTemplate, predefined);
+                        } else {
+                            processingTemplate = processingTemplate.replace(currentTemplate, '');
+                        }
                     }
-                    // If e is a <template> for looping
-                    if (e instanceof HTMLTemplateElement && e.hasAttribute(ATTR_LOOP)) {
-                        e[PROPERTY_ADF][PROPERTY_ADF_ENTITY_LIST] = [];
-                        e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL] = {};
-                        // template function
-                        e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteMap = new Map();
-                        e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].appendNewEntity = function(data, outAfter) {
-                            let holder = document.createElement("div");
-                            holder.innerHTML = e.innerHTML;
-                            self.analyze(holder);
-                            self.render(holder, data);
-                            let childTotal = [];
-                            for (let deleter of holder.querySelectorAll('[' + ATTR_LOOP_DELETE + ']')) {
-                                e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteMap.set(deleter, childTotal);
-                                deleter.addEventListener("click", function() {
-                                    e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteAllEntity(deleter, true);
-                                });
-                            }
-                            while (holder.firstChild) {
-                                childTotal.push(holder.firstChild);
-                                e.parentNode.appendChild(holder.firstChild);
-                            }
-                            e[PROPERTY_ADF][PROPERTY_ADF_ENTITY_LIST].push(holder[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY]);
-                            if (outAfter) {
-                                self.dispatchEvent(new Event(EVENT_PUT));
-                            }
-                        };
-                        e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteAllEntity = function(deleter, outAfter) {
-                            let m = e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteMap.get(deleter);
-                            for (let c of m) {
-                                c.remove();
-                            }
-                            if (outAfter) {
-                                self.dispatchEvent(new Event(EVENT_PUT));
-                            }
-                        };
-                        // template function
-                    }
-                    //
-                    if (processingTemplate !== template) {
-                        e[PROPERTY_ADF][PROPERTY_ADF_TEMPLATE_MAP].set(name, template);
-                        return true;
-                    } else {
-                        return false;
+                    if (processed) {
+                        if (name) {
+                            e.setAttribute(name, processingTemplate);
+                        } else {
+                            e.textContent = processingTemplate;
+                        }
+                        e[PROPERTY_ADF][PROPERTY_ADF_TEMPLATE_MAP].set(name, { template: template, fields: fields });
                     }
                 }
+                console.log(e[PROPERTY_ADF][PROPERTY_ADF_TEMPLATE_MAP]);
             }
         }
         eventize() {
@@ -280,14 +272,14 @@
         render(root, data) {
             let self = this;
             let inElements = root[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY][KEYWORD_GET];
-            for (let e of inElements) {
-                let attributeMap = e[PROPERTY_ADF][PROPERTY_ADF_TEMPLATE_MAP];
-                if (e.tagName === "TEMPLATE" && attributeMap.has(ATTR_LOOP)) {
-                    renderArray(e, attributeMap.get(ATTR_LOOP));
+            for (let record of inElements) {
+                let attributeMap = record.e[PROPERTY_ADF][PROPERTY_ADF_TEMPLATE_MAP];
+                if (record.e.tagName === "TEMPLATE" && attributeMap.has(ATTR_LOOP)) {
+                    renderArray(record.e, attributeMap.get(ATTR_LOOP));
                 } else {
                     for (let a of attributeMap.keys()) {
                         if (attributeMap.get(a).includes(KEYWORD_SPLITTER + KEYWORD_GET)) {
-                            renderProperty(e, a, attributeMap.get(a));
+                            renderProperty(record.e, a, attributeMap.get(a));
                         }
                     }
                 }
@@ -486,7 +478,7 @@
             super();
             this.validate();
             this.analyze(this);
-            this.eventize();
+            //this.eventize();
         }
         connectedCallback() {
             if (this.hasAttribute(ATTR_AUTO_GET)) {
