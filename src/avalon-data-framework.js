@@ -124,7 +124,6 @@
                     };
                     // template function
                 }
-                //
                 // Content
                 if (e.children.length === 0) {
                     analyzeTemplate(e, "", e.textContent);
@@ -163,11 +162,11 @@
                     let processingTemplate = template;
                     let processed = false;
                     let fields = [];
-                    while (self.dataDefinitionExist(processingTemplate)) {
+                    while (dataDefinitionExist(processingTemplate)) {
                         processed = true;
-                        let currentTemplate = self.extractFirstTemplate(processingTemplate);
-                        let keywords = self.extractDef(currentTemplate);
-                        let field = keywords.shift();
+                        let currentTemplate = extractFirstTemplate(processingTemplate);
+                        let keywords = extractDef(currentTemplate);
+                        let path = keywords.shift();
                         let predefined = "";
                         for (let k of keywords) {
                             // Predefined Keywords
@@ -195,8 +194,9 @@
                                 break;
                         }
                         fields.push({
-                            field: field,
-                            template: predefined || currentTemplate
+                            path: path,
+                            template: predefined || currentTemplate,
+                            keywords: keywords
                         });
                         if (predefined) {
                             processingTemplate = processingTemplate.replace(currentTemplate, predefined);
@@ -214,7 +214,18 @@
                         e[PROPERTY_ADF][PROPERTY_ADF_TEMPLATE_MAP].set(name, { template: template, fields: fields });
                     }
                 }
-                console.log(e[PROPERTY_ADF][PROPERTY_ADF_TEMPLATE_MAP]);
+            }
+
+            function extractFirstTemplate(template) {
+                return template.substring(template.indexOf(KEYWORD_DATA_OPEN), template.indexOf(KEYWORD_DATA_CLOSE) + 2);
+            }
+
+            function extractDef(extractedTemplate) {
+                return extractedTemplate.replace(KEYWORD_DATA_OPEN, "").replace(KEYWORD_DATA_CLOSE, "").split(KEYWORD_SPLITTER);
+            }
+
+            function dataDefinitionExist(template) {
+                return template.includes(KEYWORD_DATA_OPEN) && template.includes(KEYWORD_DATA_CLOSE) && template.indexOf(KEYWORD_DATA_OPEN) < template.indexOf(KEYWORD_DATA_CLOSE);
             }
         }
         eventize() {
@@ -272,91 +283,97 @@
         render(root, data) {
             let self = this;
             let inElements = root[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY][KEYWORD_GET];
-            for (let record of inElements) {
-                let attributeMap = record.e[PROPERTY_ADF][PROPERTY_ADF_TEMPLATE_MAP];
-                if (record.e.tagName === "TEMPLATE" && attributeMap.has(ATTR_LOOP)) {
-                    renderArray(record.e, attributeMap.get(ATTR_LOOP));
+            for (let e of inElements) {
+                let attributeMap = e[PROPERTY_ADF][PROPERTY_ADF_TEMPLATE_MAP];
+                if (e.tagName === "TEMPLATE" && attributeMap.has(ATTR_LOOP)) {
+                    renderArray(e, attributeMap.get(ATTR_LOOP));
                 } else {
                     for (let a of attributeMap.keys()) {
-                        if (attributeMap.get(a).includes(KEYWORD_SPLITTER + KEYWORD_GET)) {
-                            renderProperty(record.e, a, attributeMap.get(a));
+                        renderProperty(e, a, attributeMap.get(a));
+                    }
+                }
+            }
+
+            function renderArray(element, templateInfo) {
+                let keywords = templateInfo.fields[0].keywords;
+                if (keywords.includes(KEYWORD_GET)) {
+                    let path = templateInfo.fields[0].path;
+                    let value = getDeepValue(data, path) || []; // which is an array
+                    for (let es of element[PROPERTY_ADF][PROPERTY_ADF_ENTITY_LIST]) {
+                        for (let e of es[KEYWORD_GET]) {
+                            e.remove();
                         }
                     }
-                }
-            }
-
-            function renderArray(templateElement, templateTemplate) {
-                let keywords = self.extractDef(self.extractFirstTemplate(templateTemplate));
-                let path = keywords.shift();
-                let value = getDeepValue(data, path) || []; // which is an array
-                for (let es of templateElement[PROPERTY_ADF][PROPERTY_ADF_ENTITY_LIST]) {
-                    for (let e of es[KEYWORD_GET]) {
-                        e.remove();
+                    element[PROPERTY_ADF][PROPERTY_ADF_ENTITY_LIST] = [];
+                    for (let v of value) {
+                        element[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].appendNewEntity(v, false);
                     }
                 }
-                templateElement[PROPERTY_ADF][PROPERTY_ADF_ENTITY_LIST] = [];
-                for (let v of value) {
-                    templateElement[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].appendNewEntity(v, false);
-                }
             }
 
-            function renderProperty(element, name, template) {
-                let processingTemplate = template;
-                while (self.dataDefinitionExist(processingTemplate)) {
-                    let currentTemplate = self.extractFirstTemplate(processingTemplate);
-                    let keywords = self.extractDef(currentTemplate);
-                    let path = keywords.shift();
-                    let value = getDeepValue(data, path);
-                    switch (true) {
-                        case keywords.includes(KEYWORD_JSON):
-                            try {
-                                value = JSON.stringify(value);
-                            } catch (e) {
-                                value = "";
+            function renderProperty(element, name, templateInfo) {
+                let processingTemplate = templateInfo.template;
+                let processed = false;
+                for (let f of templateInfo.fields) {
+                    let keywords = f.keywords;
+                    if (keywords.includes(KEYWORD_GET)) {
+                        processed = true;
+                        let currentTemplate = f.template;
+                        let path = f.path;
+                        let value = getDeepValue(data, path);
+                        switch (true) {
+                            case keywords.includes(KEYWORD_JSON):
+                                try {
+                                    value = JSON.stringify(value);
+                                } catch (e) {
+                                    value = "";
+                                }
+                                break;
+                            case keywords.includes(KEYWORD_STRING):
+                                value = value.toString();
+                                break;
+                            case keywords.includes(KEYWORD_INTEGER):
+                                value = value || 0;
+                                break;
+                            case keywords.includes(KEYWORD_FLOAT):
+                                value = value || 0;
+                                break;
+                            case keywords.includes(KEYWORD_BOOLEAN):
+                                value = value.toString();
+                                break;
+                            case keywords.includes(KEYWORD_DATE):
+                                value = (new Date(value)).toLocaleDateString();
+                                break;
+                            case keywords.includes(KEYWORD_TIME):
+                                value = (new Date(value)).toLocaleTimeString();
+                                break;
+                        }
+                        processingTemplate = processingTemplate.replace(currentTemplate, value || '');
+                    }
+                }
+                if (processed) {
+                    switch (name) {
+                        case "":
+                            element.textContent = processingTemplate;
+                            break;
+                        case "value":
+                            element.value = processingTemplate;
+                            break;
+                        case "checked":
+                            if (processingTemplate) {
+                                element.setAttribute("checked", "");
+                            } else {
+                                element.removeAttribute("checked");
                             }
                             break;
-                        case keywords.includes(KEYWORD_STRING):
-                            value = value.toString();
-                            break;
-                        case keywords.includes(KEYWORD_INTEGER):
-                            value = value || 0;
-                            break;
-                        case keywords.includes(KEYWORD_FLOAT):
-                            value = value || 0;
-                            break;
-                        case keywords.includes(KEYWORD_BOOLEAN):
-                            value = value.toString();
-                            break;
-                        case keywords.includes(KEYWORD_DATE):
-                            value = (new Date(value)).toLocaleDateString();
-                            break;
-                        case keywords.includes(KEYWORD_TIME):
-                            value = (new Date(value)).toLocaleTimeString();
+                        default:
+                            if (!processingTemplate && processingTemplate !== 0) {
+                                element.removeAttribute(name);
+                            } else {
+                                element.setAttribute(name, processingTemplate);
+                            }
                             break;
                     }
-                    processingTemplate = processingTemplate.replace(currentTemplate, value || '');
-                }
-                switch (name) {
-                    case "":
-                        element.textContent = processingTemplate;
-                        break;
-                    case "value":
-                        element.value = processingTemplate;
-                        break;
-                    case "checked":
-                        if (processingTemplate) {
-                            element.setAttribute("checked", "");
-                        } else {
-                            element.removeAttribute("checked");
-                        }
-                        break;
-                    default:
-                        if (!processingTemplate && processingTemplate !== 0) {
-                            element.removeAttribute(name);
-                        } else {
-                            element.setAttribute(name, processingTemplate);
-                        }
-                        break;
                 }
             }
 
@@ -382,80 +399,83 @@
                     gatherArray(e, attributeMap.get(ATTR_LOOP));
                 } else {
                     for (let a of attributeMap.keys()) {
-                        if (attributeMap.get(a).includes(onlyIdentifier ? KEYWORD_SPLITTER + KEYWORD_IDENTIFIER : KEYWORD_SPLITTER + KEYWORD_PUT)) {
-                            gatherProperty(e, a, attributeMap.get(a));
-                        }
+                        gatherProperty(e, a, attributeMap.get(a));
                     }
                 }
             }
 
-            function gatherArray(templateElement, templateTemplate) {
-                let path = self.extractDef(self.extractFirstTemplate(templateTemplate)).shift();
-                let value = [];
-                let elementList = templateElement[PROPERTY_ADF][PROPERTY_ADF_ENTITY_LIST];
-                for (let elementSummary of elementList) {
-                    let holder = document.createElement("div");
-                    for (let e of elementSummary[KEYWORD_PUT]) {
-                        if (e.getRootNode() === e.ownerDocument) {
-                            let ec = e.cloneNode(true);
-                            holder.appendChild(ec);
-                        } else {
-                            elementSummary[KEYWORD_PUT].delete(e);
+            function gatherArray(element, templateInfo) {
+                let keywords = templateInfo.fields[0].keywords;
+                if (keywords.includes(onlyIdentifier ? KEYWORD_IDENTIFIER : KEYWORD_PUT)) {
+                    let path = templateInfo.fields[0].path;
+                    let value = [];
+                    let elementList = element[PROPERTY_ADF][PROPERTY_ADF_ENTITY_LIST];
+                    for (let elementSummary of elementList) {
+                        let holder = document.createElement("div");
+                        for (let e of elementSummary[KEYWORD_PUT]) {
+                            if (e.getRootNode() === e.ownerDocument) {
+                                let ec = e.cloneNode(true);
+                                holder.appendChild(ec);
+                            } else {
+                                elementSummary[KEYWORD_PUT].delete(e);
+                            }
+                        }
+                        if (elementSummary[KEYWORD_PUT].size > 0) {
+                            holder[PROPERTY_ADF] = {};
+                            holder[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY] = elementSummary;
+                            value.push(self.gather(holder, onlyIdentifier));
                         }
                     }
-                    if (elementSummary[KEYWORD_PUT].size > 0) {
-                        holder[PROPERTY_ADF] = {};
-                        holder[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY] = elementSummary;
-                        value.push(self.gather(holder, onlyIdentifier));
-                    }
+                    setDeepValue(data, path, value);
                 }
-                setDeepValue(data, path, value);
             }
 
-            function gatherProperty(element, name, template) {
-                let keywords = self.extractDef(self.extractFirstTemplate(template));
-                let path = keywords.shift();
-                let value = null;
-                switch (name) {
-                    case "":
-                        value = element.textContent;
-                        break;
-                    case "value":
-                        value = element.value;
-                        break;
-                    case "checked":
-                        value = element.checked;
-                        break;
-                    default:
-                        value = element.getAttribute(name);
-                        break;
+            function gatherProperty(element, name, templateInfo) {
+                let keywords = templateInfo.fields[0].keywords;
+                if (keywords.includes(onlyIdentifier ? KEYWORD_IDENTIFIER : KEYWORD_PUT)) {
+                    let path = templateInfo.fields[0].path;
+                    let value = null;
+                    switch (name) {
+                        case "":
+                            value = element.textContent;
+                            break;
+                        case "value":
+                            value = element.value;
+                            break;
+                        case "checked":
+                            value = element.checked;
+                            break;
+                        default:
+                            value = element.getAttribute(name);
+                            break;
+                    }
+                    switch (true) {
+                        case keywords.includes(KEYWORD_JSON):
+                            try {
+                                value = JSON.parse(value);
+                            } catch (e) {
+                                value = null;
+                            }
+                            break;
+                        case keywords.includes(KEYWORD_STRING):
+                            value = value.toString();
+                            break;
+                        case keywords.includes(KEYWORD_INTEGER):
+                            value = parseInt(value, 10) || 0;
+                            break;
+                        case keywords.includes(KEYWORD_FLOAT):
+                            value = parseFloat(value) || 0;
+                            break;
+                        case keywords.includes(KEYWORD_BOOLEAN):
+                            value = (value === 'true');
+                            break;
+                        case keywords.includes(KEYWORD_DATE):
+                        case keywords.includes(KEYWORD_TIME):
+                            value = new Date(value);
+                            break;
+                    }
+                    setDeepValue(data, path, value);
                 }
-                switch (true) {
-                    case keywords.includes(KEYWORD_JSON):
-                        try {
-                            value = JSON.parse(value);
-                        } catch (e) {
-                            value = null;
-                        }
-                        break;
-                    case keywords.includes(KEYWORD_STRING):
-                        value = value.toString();
-                        break;
-                    case keywords.includes(KEYWORD_INTEGER):
-                        value = parseInt(value, 10) || 0;
-                        break;
-                    case keywords.includes(KEYWORD_FLOAT):
-                        value = parseFloat(value) || 0;
-                        break;
-                    case keywords.includes(KEYWORD_BOOLEAN):
-                        value = (value === 'true');
-                        break;
-                    case keywords.includes(KEYWORD_DATE):
-                    case keywords.includes(KEYWORD_TIME):
-                        value = new Date(value);
-                        break;
-                }
-                setDeepValue(data, path, value);
             }
 
             function setDeepValue(obj, path, value) {
@@ -478,21 +498,12 @@
             super();
             this.validate();
             this.analyze(this);
-            //this.eventize();
+            this.eventize();
         }
         connectedCallback() {
             if (this.hasAttribute(ATTR_AUTO_GET)) {
                 this.dispatchEvent(new Event(EVENT_GET));
             }
-        }
-        extractFirstTemplate(template) {
-            return template.substring(template.indexOf(KEYWORD_DATA_OPEN), template.indexOf(KEYWORD_DATA_CLOSE) + 2);
-        }
-        extractDef(extractedTemplate) {
-            return extractedTemplate.replace(KEYWORD_DATA_OPEN, "").replace(KEYWORD_DATA_CLOSE, "").split(KEYWORD_SPLITTER);
-        }
-        dataDefinitionExist(template) {
-            return template.includes(KEYWORD_DATA_OPEN) && template.includes(KEYWORD_DATA_CLOSE) && template.indexOf(KEYWORD_DATA_OPEN) < template.indexOf(KEYWORD_DATA_CLOSE);
         }
     });
 }
