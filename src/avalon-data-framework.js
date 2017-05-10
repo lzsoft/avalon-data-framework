@@ -92,34 +92,28 @@
                     e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL] = {};
                     // template function
                     e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteMap = new Map();
-                    e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].appendNewEntity = function(data, outAfter) {
+                    e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].appendNewEntity = function(data) {
                         let holder = document.createElement("div");
                         holder.innerHTML = e.innerHTML;
                         self.analyze(holder);
                         self.render(holder, data);
                         let childTotal = [];
+                        while (holder.firstChild) {
+                            childTotal.push(holder.firstChild);
+                            e.parentNode.appendChild(holder.firstChild);
+                        }
                         for (let deleter of holder.querySelectorAll('[' + ATTR_LOOP_DELETE + ']')) {
                             e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteMap.set(deleter, childTotal);
                             deleter.addEventListener("click", function() {
                                 e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteAllEntity(deleter, true);
                             });
                         }
-                        while (holder.firstChild) {
-                            childTotal.push(holder.firstChild);
-                            e.parentNode.appendChild(holder.firstChild);
-                        }
                         e[PROPERTY_ADF][PROPERTY_ADF_ENTITY_LIST].push(holder[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY]);
-                        if (outAfter) {
-                            self.dispatchEvent(new Event(EVENT_PUT));
-                        }
                     };
-                    e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteAllEntity = function(deleter, outAfter) {
+                    e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteAllEntity = function(deleter) {
                         let m = e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteMap.get(deleter);
                         for (let c of m) {
                             c.remove();
-                        }
-                        if (outAfter) {
-                            self.dispatchEvent(new Event(EVENT_PUT));
                         }
                     };
                     // template function
@@ -182,16 +176,14 @@
                                     break;
                             }
                         }
-                        switch (true) {
-                            case keywords.includes(KEYWORD_IDENTIFIER):
-                                root[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY][KEYWORD_IDENTIFIER].add(e);
-                                break;
-                            case keywords.includes(KEYWORD_GET):
-                                root[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY][KEYWORD_GET].add(e);
-                                break;
-                            case keywords.includes(KEYWORD_PUT):
-                                root[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY][KEYWORD_PUT].add(e);
-                                break;
+                        if (keywords.includes(KEYWORD_IDENTIFIER)) {
+                            root[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY][KEYWORD_IDENTIFIER].add(e);
+                        }
+                        if (keywords.includes(KEYWORD_GET)) {
+                            root[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY][KEYWORD_GET].add(e);
+                        }
+                        if (keywords.includes(KEYWORD_PUT)) {
+                            root[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY][KEYWORD_PUT].add(e);
                         }
                         fields.push({
                             path: path,
@@ -306,7 +298,7 @@
                     }
                     element[PROPERTY_ADF][PROPERTY_ADF_ENTITY_LIST] = [];
                     for (let v of value) {
-                        element[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].appendNewEntity(v, false);
+                        element[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].appendNewEntity(v);
                     }
                 }
             }
