@@ -267,11 +267,12 @@
                 }
 
                 function done(json) {
-                    self.render(self, json, false);
                     self.removeAttribute(ATTR_LOADING);
-                    self.dispatchEvent(new CustomEvent(EVENT_PUT_DONE, { detail: json }));
                     if (self.hasAttribute(ATTR_GET_AFTER_PUT)) {
-                        self.dispatchEvent(new Event(KEYWORD_GET));
+                        self.dispatchEvent(new Event(EVENT_GET));
+                    } else {
+                        self.render(self, json, false);
+                        self.dispatchEvent(new CustomEvent(EVENT_PUT_DONE, { detail: json }));
                     }
                 }
             });
