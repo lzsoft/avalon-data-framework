@@ -272,8 +272,8 @@
                         self.dispatchEvent(new Event(EVENT_GET));
                     } else {
                         self.render(self, json, false);
-                        self.dispatchEvent(new CustomEvent(EVENT_PUT_DONE, { detail: json }));
                     }
+                    self.dispatchEvent(new CustomEvent(EVENT_PUT_DONE, { detail: json }));
                 }
             });
         }
