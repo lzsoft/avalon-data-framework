@@ -6,6 +6,7 @@
     const ATTR_URL = "data-url";
     const ATTR_JSON = "data-json";
     const ATTR_AUTO_GET = "data-auto-get";
+    const ATTR_GET_AFTER_PUT = "data-get-after-put";
     const ATTR_LOOP = "data-loop";
     const ATTR_LOOP_DELETE = "data-loop-delete";
     const ATTR_PENETRATE = "data-penetrate";
@@ -269,6 +270,9 @@
                     self.render(self, json, false);
                     self.removeAttribute(ATTR_LOADING);
                     self.dispatchEvent(new CustomEvent(EVENT_PUT_DONE, { detail: json }));
+                    if (self.hasAttribute(ATTR_GET_AFTER_PUT)) {
+                        self.dispatchEvent(new Event(KEYWORD_GET));
+                    }
                 }
             });
         }
