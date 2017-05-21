@@ -493,11 +493,11 @@
         }
         constructor() {
             super();
+        }
+        connectedCallback() {
             this.validate();
             this.analyze(this);
             this.eventize();
-        }
-        connectedCallback() {
             if (this.hasAttribute(ATTR_AUTO_GET)) {
                 this.dispatchEvent(new Event(EVENT_GET));
             }
