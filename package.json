@@ -8,5 +8,15 @@
     "dependencies": {
         "avalon-front-end-infrastructure": "tingting-io/avalon-front-end-infrastructure"
     },
-    "flat": true
+    "flat": true,
+    "scripts": {
+        "init": "npm run init:uglify-es && npm run init:uglifycss && npm run init:html-minifier",
+        "init:uglify-es": "npm install uglify-es -g",
+        "init:uglifycss": "npm install uglifycss -g",
+        "init:html-minifier": "npm install html-minifier -g",
+        "build": "npm run build:uglify-es && npm run build:uglifycss && npm run build:html-minifier",
+        "build:uglify-es": "uglifyjs src/avalon-data-framework.js -c -m -o min/avalon-data-framework.js",
+        "build:uglifycss": "uglifycss src/avalon-data-framework.css --output min/avalon-data-framework.css",
+        "build:html-minifier": "html-minifier src/avalon-data-framework.html -o min/avalon-data-framework.html"
+    }
 }
