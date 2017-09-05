@@ -336,7 +336,7 @@
                                 value = value || 0;
                                 break;
                             case keywords.includes(KEYWORD_BOOLEAN):
-                                value = value.toString();
+                                // value = value
                                 break;
                             case keywords.includes(KEYWORD_DATE):
                                 value = (new Date(value)).toLocaleDateString();
