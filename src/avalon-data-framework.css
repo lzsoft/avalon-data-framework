@@ -2,11 +2,10 @@ avalon-data-framework {
     position: relative;
     --avalon-data-framework-color: #999;
 }
-
 avalon-data-framework:after {
     content: "";
     border-radius: 50%;
-    position: absolute;
+    position: fixed;
     top: 50%;
     left: 50%;
     height: 0;
@@ -16,11 +15,9 @@ avalon-data-framework:after {
     opacity: 1;
     z-index: 112;
 }
-
 avalon-data-framework[data-loading]:after {
     animation: avalon-data-framework-loading 1s infinite;
 }
-
 @keyframes avalon-data-framework-loading {
     0%,
     100% {
