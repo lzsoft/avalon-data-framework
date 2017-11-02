@@ -36,6 +36,8 @@
     const KEYWORD_PARAM = "PARAM";
     const KEYWORD_VAL = "VAL";
     const KEYWORD_SEGMENT = "SEGMENT";
+    const KEYWORD_GET_ALIAS = "GETALIAS";
+    const KEYWORD_PUT_ALIAS = "PUTALIAS";
     const KEYWORD_DATA_OPEN = "{{";
     const KEYWORD_DATA_CLOSE = "}}";
     const KEYWORD_EVENT_OPEN = "[[";
@@ -318,34 +320,38 @@
                         let currentTemplate = f.template;
                         let path = f.path;
                         let value = getDeepValue(data, path);
-                        switch (true) {
-                            case keywords.includes(KEYWORD_JSON):
-                                try {
-                                    value = JSON.stringify(value);
-                                } catch (e) {
-                                    value = "";
-                                }
-                                break;
-                            case keywords.includes(KEYWORD_STRING):
-                                value = value.toString();
-                                break;
-                            case keywords.includes(KEYWORD_INTEGER):
-                                value = value || 0;
-                                break;
-                            case keywords.includes(KEYWORD_FLOAT):
-                                value = value || 0;
-                                break;
-                            case keywords.includes(KEYWORD_BOOLEAN):
-                                // value = value
-                                break;
-                            case keywords.includes(KEYWORD_DATE):
-                                value = (new Date(value)).toLocaleDateString();
-                                break;
-                            case keywords.includes(KEYWORD_TIME):
-                                value = (new Date(value)).toLocaleTimeString();
-                                break;
+                        if (value) {
+                            switch (true) {
+                                case keywords.includes(KEYWORD_JSON):
+                                    try {
+                                        value = JSON.stringify(value);
+                                    } catch (e) {
+                                        value = "";
+                                    }
+                                    break;
+                                case keywords.includes(KEYWORD_STRING):
+                                    value = value.toString();
+                                    break;
+                                case keywords.includes(KEYWORD_INTEGER):
+                                    value = value || 0;
+                                    break;
+                                case keywords.includes(KEYWORD_FLOAT):
+                                    value = value || 0;
+                                    break;
+                                case keywords.includes(KEYWORD_BOOLEAN):
+                                    // value = value
+                                    break;
+                                case keywords.includes(KEYWORD_DATE):
+                                    value = (new Date(value)).toLocaleDateString();
+                                    break;
+                                case keywords.includes(KEYWORD_TIME):
+                                    value = (new Date(value)).toLocaleTimeString();
+                                    break;
+                            }
+                            processingTemplate = processingTemplate.replace(currentTemplate, value);
+                        } else {
+                            processingTemplate = processingTemplate.replace(currentTemplate, '');
                         }
-                        processingTemplate = processingTemplate.replace(currentTemplate, value || '');
                     }
                 }
                 if (processed) {
