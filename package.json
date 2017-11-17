@@ -6,7 +6,7 @@
     "license": "MIT",
     "homepage": "https://github.com/tingting-io/avalon-data-framework",
     "dependencies": {
-        "avalon-front-end-infrastructure": "tingting-io/avalon-front-end-infrastructure"
+        "avalon-front-end-infrastructure": "github:tingting-io/avalon-front-end-infrastructure"
     },
     "flat": true,
     "scripts": {
