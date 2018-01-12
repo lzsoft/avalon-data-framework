@@ -4,9 +4,9 @@
     "version": "1.0.0",
     "description": "This is a MVC framework for internal use only. It provides a highly compact sync framework for CRUD actions between browser and server.",
     "license": "MIT",
-    "homepage": "https://github.com/tingting-io/avalon-data-framework",
+    "homepage": "https://github.com/tclzcja/avalon-data-framework",
     "dependencies": {
-        "avalon-front-end-infrastructure": "github:tingting-io/avalon-front-end-infrastructure"
+        "avalon-front-end-infrastructure": "github:tclzcja/avalon-front-end-infrastructure"
     },
     "flat": true,
     "scripts": {
