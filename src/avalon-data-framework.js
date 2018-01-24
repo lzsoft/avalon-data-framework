@@ -15,7 +15,7 @@
     //
     // PROPERTY is the analysis result or related data attached to the <element> as JavaScript Object Property in form like element["property"].
     //
-    const PROPERTY_ADF = "tingting-adf";
+    const PROPERTY_ADF = "avalon-adf";
     const PROPERTY_ADF_ELEMENT_SUMMARY = "element-summary"; // GET, PUT, IDENTIFIER.
     const PROPERTY_ADF_TEMPLATE_MAP = "template-map"; // "value": "{{name:GET:PUT}}".
     const PROPERTY_ADF_ENTITY_LIST = "entity-list"; // [<entity-element-set>, <entity-element-set>].
@@ -95,7 +95,7 @@
                     e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL] = {};
                     // template function
                     e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteMap = new Map();
-                    e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].appendNewEntity = function(data) {
+                    e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].appendNewEntity = function (data) {
                         let holder = document.createElement("div");
                         holder.innerHTML = e.innerHTML;
                         self.analyze(holder);
@@ -107,13 +107,13 @@
                         }
                         for (let deleter of holder.querySelectorAll('[' + ATTR_LOOP_DELETE + ']')) {
                             e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteMap.set(deleter, childTotal);
-                            deleter.addEventListener("click", function() {
+                            deleter.addEventListener("click", function () {
                                 e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteAllEntity(deleter, true);
                             });
                         }
                         e[PROPERTY_ADF][PROPERTY_ADF_ENTITY_LIST].push(holder[PROPERTY_ADF][PROPERTY_ADF_ELEMENT_SUMMARY]);
                     };
-                    e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteAllEntity = function(deleter) {
+                    e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteAllEntity = function (deleter) {
                         let m = e[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].deleteMap.get(deleter);
                         for (let c of m) {
                             c.remove();
@@ -140,7 +140,7 @@
                         let elementEventName = name.substring(2); // "onchange" -> "change"
                         let spadEventList = value.replace(KEYWORD_EVENT_OPEN, "").replace(KEYWORD_EVENT_CLOSE, "").split(KEYWORD_SPLITTER);
                         for (let spadEventName of spadEventList) {
-                            e.addEventListener(elementEventName, function() {
+                            e.addEventListener(elementEventName, function () {
                                 self.dispatchEvent(new Event(spadEventName));
                             });
                         }
@@ -206,7 +206,10 @@
                         } else {
                             e.textContent = processingTemplate;
                         }
-                        e[PROPERTY_ADF][PROPERTY_ADF_TEMPLATE_MAP].set(name, { template: template, fields: fields });
+                        e[PROPERTY_ADF][PROPERTY_ADF_TEMPLATE_MAP].set(name, {
+                            template: template,
+                            fields: fields
+                        });
                     }
                 }
             }
@@ -225,14 +228,14 @@
         }
         eventize() {
             let self = this;
-            self.addEventListener(EVENT_GET, async function(e) {
+            self.addEventListener(EVENT_GET, async function (e) {
                 e.stopPropagation();
                 if (!self.hasAttribute(ATTR_LOADING)) {
                     try {
                         self.setAttribute(ATTR_LOADING, "");
                         let query = self.gather(self, true);
                         if (self.hasAttribute(ATTR_URL)) {
-                            done(await window.tingting.api.get(self.getAttribute(ATTR_URL), query));
+                            done(await window.avalon.api.get(self.getAttribute(ATTR_URL), query));
                         } else if (self.hasAttribute(ATTR_JSON)) {
                             done(JSON.parse(self.getAttribute(ATTR_JSON)));
                         } else {
@@ -246,17 +249,19 @@
                 function done(json) {
                     self.render(self, json, false);
                     self.removeAttribute(ATTR_LOADING);
-                    self.dispatchEvent(new CustomEvent(EVENT_GET_DONE, { detail: json }));
+                    self.dispatchEvent(new CustomEvent(EVENT_GET_DONE, {
+                        detail: json
+                    }));
                 }
             });
-            self.addEventListener(EVENT_PUT, async function(e) {
+            self.addEventListener(EVENT_PUT, async function (e) {
                 e.stopPropagation();
                 if (!self.hasAttribute(ATTR_LOADING)) {
                     try {
                         self.setAttribute(ATTR_LOADING, "");
                         let query = self.gather(self, false);
                         if (self.hasAttribute(ATTR_URL)) {
-                            done(await window.tingting.api.put(self.getAttribute(ATTR_URL), query));
+                            done(await window.avalon.api.put(self.getAttribute(ATTR_URL), query));
                         } else if (self.hasAttribute(ATTR_JSON)) {
                             self.setAttribute(ATTR_JSON, JSON.stringify(query));
                             done(query);
@@ -275,7 +280,9 @@
                     } else {
                         self.render(self, json, false);
                     }
-                    self.dispatchEvent(new CustomEvent(EVENT_PUT_DONE, { detail: json }));
+                    self.dispatchEvent(new CustomEvent(EVENT_PUT_DONE, {
+                        detail: json
+                    }));
                 }
             });
         }
