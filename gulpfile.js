@@ -1,7 +1,6 @@
 let gulp = require('gulp');
 var minifyJS = require('gulp-minify');
 let cleanCSS = require('gulp-clean-css');
-var del = require('del');
 gulp.task('js', function () {
     gulp.src('./src/**/*.js').pipe(minifyJS({
         ext: {
@@ -15,9 +14,4 @@ gulp.task('css', function () {
         compatibility: '*'
     })).pipe(gulp.dest('./min/'));
 });
-gulp.task('clean', function () {
-    del('./src/', {
-        force: true
-    });
-});
-gulp.task('build', ['css', 'js', 'clean']);
+gulp.task('build', ['css', 'js']);
