@@ -6,15 +6,14 @@
     "license": "MIT",
     "homepage": "https://github.com/tclzcja/avalon-data-framework",
     "dependencies": {
-        "avalon-front-end-infrastructure": "github:tclzcja/avalon-front-end-infrastructure"
+        "avalon-front-end-infrastructure": "github:tclzcja/avalon-front-end-infrastructure",
+        "del": "^3.0.0",
+        "gulp": "^3.9.1",
+        "gulp-clean-css": "^3.9.2",
+        "gulp-minify": "^2.1.0"
     },
     "flat": true,
     "scripts": {
-        "init": "npm run init:uglify-es && npm run init:uglifycss",
-        "init:uglify-es": "npm install uglify-es -g",
-        "init:uglifycss": "npm install uglifycss -g",
-        "build": "npm run build:uglify-es && npm run build:uglifycss",
-        "build:uglify-es": "uglifyjs src/avalon-data-framework.js -c -m -o min/avalon-data-framework.js",
-        "build:uglifycss": "uglifycss src/avalon-data-framework.css --output min/avalon-data-framework.css"
+        "postinstall": "gulp build"
     }
 }
