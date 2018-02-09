@@ -364,7 +364,7 @@
                 if (processed) {
                     switch (name) {
                         case "":
-                            element.textContent = processingTemplate;
+                            element.innerHTML = processingTemplate;
                             break;
                         case "value":
                             element.value = processingTemplate;
