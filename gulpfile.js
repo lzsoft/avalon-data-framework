@@ -1,6 +1,6 @@
-let gulp = require('gulp');
-var minifyJS = require('gulp-minify');
-let cleanCSS = require('gulp-clean-css');
+const gulp = require('gulp');
+const minifyJS = require('gulp-minify');
+const cleanCSS = require('gulp-clean-css');
 const del = require('del');
 gulp.task('js', function () {
     gulp.src('./src/**/*.js').pipe(minifyJS({
