@@ -12,6 +12,7 @@
     const ATTR_PENETRATE = "data-penetrate";
     const ATTR_ANALYZING = "data-analyzing";
     const ATTR_LOADING = "data-loading";
+    const ATTR_APPEND = "data-append";
     //
     // PROPERTY is the analysis result or related data attached to the <element> as JavaScript Object Property in form like element["property"].
     //
@@ -305,12 +306,14 @@
                 if (keywords.includes(KEYWORD_GET)) {
                     let path = templateInfo.fields[0].path;
                     let value = getDeepValue(data, path) || []; // which is an array
-                    for (let es of element[PROPERTY_ADF][PROPERTY_ADF_ENTITY_LIST]) {
-                        for (let e of es[KEYWORD_GET]) {
-                            e.remove();
+                    if (!self.hasAttribute(ATTR_APPEND)) {
+                        for (let es of element[PROPERTY_ADF][PROPERTY_ADF_ENTITY_LIST]) {
+                            for (let e of es[KEYWORD_GET]) {
+                                e.remove();
+                            }
                         }
+                        element[PROPERTY_ADF][PROPERTY_ADF_ENTITY_LIST] = [];
                     }
-                    element[PROPERTY_ADF][PROPERTY_ADF_ENTITY_LIST] = [];
                     for (let v of value) {
                         element[PROPERTY_ADF][PROPERTY_ADF_LOOP_UTIL].appendNewEntity(v);
                     }
