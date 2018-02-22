@@ -53,6 +53,7 @@
     const EVENT_PUT = "PUT";
     const EVENT_GET_DONE = "GETDONE";
     const EVENT_PUT_DONE = "PUTDONE";
+    const EVENT_RENDER_DONE = "RENDERDONE";
     //
     window.customElements.define('avalon-data-framework', class extends HTMLElement {
         validate() {
@@ -300,6 +301,7 @@
                     }
                 }
             }
+            self.dispatchEvent(new CustomEvent(EVENT_RENDER_DONE));
 
             function renderArray(element, templateInfo) {
                 let keywords = templateInfo.fields[0].keywords;
